@@ -40,4 +40,32 @@ export default async function friendsRoutes(app) {
 		handler: friendsController.getPendingFriendRequestsController
 	});
 
+	app.patch('/friends/:id', {
+		preHandler: [verifyJWT],
+		schema: {
+			summary: "Accept or reject a friend request",
+			tags: ['Friends'],
+			security: [{ bearerAuth: [] }],
+			params: {
+				type: 'object',
+				properties: {
+					id: { type: 'string', description: 'Friend request ID' }
+				},
+				required: ['id']
+			},
+			body: {
+				type: 'object',
+				properties: {
+					action: { 
+						type: 'string', 
+						enum: ['accept', 'reject'],
+						description: 'Action to take on the friend request'
+					}
+				},
+				required: ['action']
+			}
+		},
+		handler: friendsController.respondToFriendRequestController
+	});
+
 }

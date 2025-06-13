@@ -76,3 +76,29 @@ export async function getPendingFriendRequestsController(request, reply){
 
   return reply.code(200).send({ incomingRequests });
 }
+
+
+export async function respondToFriendRequestController(request, reply) {
+  const userId = request.user.userId;
+  const friendRequestId = parseInt(request.params.id, 10);
+  const { action } = request.body;
+
+  if (!['accept', 'reject'].includes(action)) {
+    return reply.code(400).send({ error: 'Invalid action. Must be accept or reject.' });
+  }
+
+  const friendRequest = await prisma.friend.findUnique({
+    where: { id: friendRequestId }
+  });
+
+  if (!friendRequest || friendRequest.receiverId !== userId) {
+    return reply.code(404).send({ error: 'Friend request not found or not authorized' });
+  }
+
+  const updated = await prisma.friend.update({
+    where: { id: friendRequestId },
+    data: { status: action === 'accept' ? 'accepted' : 'rejected' }
+  });
+
+  return reply.send({ message: `Friend request ${action}ed`, friendRequest: updated });
+}
