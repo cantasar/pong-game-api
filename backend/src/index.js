@@ -11,6 +11,31 @@ const app = fastify({ logger: true });
 
 app.register(jwt, { secret: process.env.JWT_SECRET || 'supersecret' });
 
+await app.register(import('@fastify/swagger'), {
+  openapi: {
+    info: {
+      title: 'Pong Game API',
+      description: 'API documentation for ft_transcendence project',
+      version: '1.0.0'
+    },
+    components: {
+      securitySchemes: {
+        bearerAuth: {
+          type: 'http',
+          scheme: 'bearer',
+          bearerFormat: 'JWT'
+        }
+      }
+    },
+    security: [{ bearerAuth: [] }]
+  }
+});
+await app.register(import('@fastify/swagger-ui'), {
+  routePrefix: '/docs',
+  exposeRoute: true
+});
+
+
 app.register(authRoutes);
 app.register(friendsRoutes);
 

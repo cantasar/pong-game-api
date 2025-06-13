@@ -3,12 +3,102 @@ import { verifyJWT } from '../middlewares/auth.middleware.js';
 
 export default async function authRoutes(app, options) {
 
-  app.post('/register', authController.registerController);
+  app.post('/register', {
+    schema: {
+      summary: 'Register a new user',
+      tags: ['Auth'],
+      body: {
+        type: 'object',
+        required: ['username', 'password'],
+        properties: {
+          username: { type: 'string' },
+          password: { type: 'string' }
+        }
+      },
+      response: {
+        200: {
+          type: 'object',
+          properties: {
+            token: { type: 'string' }
+          }
+        }
+      }
+    },
+    handler: authController.registerController
+  });
 
-  app.post('/login', authController.loginController);
+  app.post('/login', {
+    schema: {
+      summary: 'Login a user',
+      tags: ['Auth'],
+      body: {
+        type: 'object',
+        required: ['username', 'password'],
+        properties: {
+          username: { type: 'string' },
+          password: { type: 'string' }
+        }
+      },
+      response: {
+        200: {
+          type: 'object',
+          properties: {
+            token: { type: 'string' }
+          }
+        }
+      }
+    },
+    handler: authController.loginController
+  });
 
-  app.get('/me', { preHandler: verifyJWT }, authController.meController);
+  app.get('/me', {
+    preHandler: verifyJWT,
+    schema: {
+      summary: 'Get current user info',
+      tags: ['Auth'],
+      security: [{ bearerAuth: [] }],
+      response: {
+        200: {
+          type: 'object',
+          properties: {
+            username: { type: 'string' }
+          }
+        }
+      }
+    },
+    handler: authController.meController
+  });
 
-  app.post('/me', { preHandler: verifyJWT }, authController.updateMeController);
+  app.post('/me', {
+    preHandler: verifyJWT,
+    schema: {
+      summary: 'Update current user info',
+      tags: ['Auth'],
+      security: [{ bearerAuth: [] }],
+      body: {
+        type: 'object',
+        properties: {
+          username: { type: 'string' },
+          password: { type: 'string' }
+        }
+      },
+      response: {
+        200: {
+          type: 'object',
+          properties: {
+            message: { type: 'string' },
+            user: {
+              type: 'object',
+              properties: {
+                username: { type: 'string' },
+                updatedAt: { type: 'string', format: 'date-time' }
+              }
+            }
+          }
+        }
+      }
+    },
+    handler: authController.updateMeController
+  });
 
 }
