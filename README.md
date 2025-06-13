@@ -35,7 +35,7 @@ It includes core features such as:
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/your-username/pong-game-api.git
+git clone https://github.com/cantasar/pong-game-api.git
 cd pong-game-api/backend
 ```
 
