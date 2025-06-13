@@ -1,0 +1,78 @@
+import { PrismaClientUnknownRequestError } from '@prisma/client/runtime/library';
+import prisma from '../db/client.js';
+
+export async function createFriendRequestController(request, reply) {
+  const requesterId = request.user.userId;
+  const targetId = parseInt(request.params.targetId, 10);
+
+  if (requesterId === targetId) {
+    return reply.code(400).send({ error: "You cannot send a friend request to yourself" });
+  }
+
+  const existing = await prisma.friend.findFirst({
+    where: {
+      OR: [
+        { requesterId, receiverId: targetId },
+        { requesterId: targetId, receiverId: requesterId }
+      ]
+    }
+  });
+
+  if (existing) {
+    return reply.code(409).send({ error: "Friend request already exists or users are already friends" });
+  }
+
+  const friendRequest = await prisma.friend.create({
+    data: {
+      requesterId,
+      receiverId: targetId,
+      status: 'pending'
+    }
+  });
+
+  return reply.code(201).send({ message: "Friend request sent", friendRequest });
+}
+
+
+export async function getFriendsController(request, reply){
+
+  const userId = request.user.userId;
+  
+  const friends = await prisma.friend.findMany({
+    where: {
+      OR: [
+        {requesterId: userId, status:"accepted"},
+        {receiverId: userId, status:"accepted"}
+      ]
+    },
+    include: {
+      requester: { select: {id: true, username: true, createdAt: true} },
+      receiver: { select: {id: true, username: true, createdAt: true} },
+    }
+  });
+
+  const friendsList = friends.map(friend => {
+      return friend.requesterId === userId ? friend.receiver : friend.requester;
+  })
+
+  return reply.code(200).send({ friendsList });
+
+}
+
+export async function getPendingFriendRequestsController(request, reply){
+  const userId = request.user.userId;
+
+  const requests = await prisma.friend.findMany({
+    where: { receiverId: userId, status: "pending" },
+    include: {
+      requester: { select: {id: true, username: true, createdAt: true} },
+      receiver: { select: {id: true, username: true, createdAt: true} }
+    }
+  })
+
+  const incomingRequests = requests.map(request => {
+    return request.requesterId === userId ? request.receiver : request.requester;
+  })
+
+  return reply.code(200).send({ incomingRequests });
+}

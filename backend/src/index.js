@@ -3,6 +3,7 @@ import dotenv from 'dotenv';
 import jwt from '@fastify/jwt';
 
 import authRoutes from './routes/auth.routes.js';
+import friendsRoutes from './routes/friends.routes.js';
 
 dotenv.config();
 
@@ -11,7 +12,7 @@ const app = fastify({ logger: true });
 app.register(jwt, { secret: process.env.JWT_SECRET || 'supersecret' });
 
 app.register(authRoutes);
-
+app.register(friendsRoutes);
 
 
 
