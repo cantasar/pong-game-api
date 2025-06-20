@@ -101,4 +101,22 @@ export default async function authRoutes(app, options) {
     handler: authController.updateMeController
   });
 
+  //google auth
+  app.get('/auth/google/callback', {
+    schema: {
+      summary: 'Google OAuth callback',
+      tags: ['Auth'],
+      response: {
+        200: {
+          type: 'object',
+          properties: {
+            token: { type: 'string' },
+            username: { type: 'string' }
+          }
+        }
+      }
+    },
+    handler: authController.googleCallbackController
+  });
+
 }

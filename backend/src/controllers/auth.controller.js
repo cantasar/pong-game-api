@@ -1,6 +1,7 @@
 import prisma from '../db/client.js';
 import bcrypt from 'bcrypt';
 
+// kullanicilarin kayit ve giris islemleri
 export async function registerController(request, reply) {
   try {
     const { username, password } = request.body;
@@ -42,6 +43,7 @@ export async function registerController(request, reply) {
   }
 }
 
+// kullanicilarin giris islemleri
 export async function loginController(request, reply) {
   try {
     const { username, password } = request.body;
@@ -76,13 +78,14 @@ export async function loginController(request, reply) {
   }
 }
 
+// kullanicinin kendi bilgilerini alma islemi
 export async function meController(request, reply) {
   try {
     const { userId } = request.user;
     
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      select: { username: true } // Only select necessary fields
+      select: { username: true }
     });
 
     if (!user) {
@@ -96,6 +99,7 @@ export async function meController(request, reply) {
   }
 }
 
+// kullanicinin kendi bilgilerini guncelleme islemleri
 export async function updateMeController(request, reply) {
   try {
     const { userId } = request.user;
@@ -151,4 +155,38 @@ export async function updateMeController(request, reply) {
     }
     return reply.code(500).send({ error: 'Failed to update user' });
   }
+}
+
+// Google OAuth2 kullanici olusturma ve oturum acma islemleri
+export async function googleCallbackController(request, reply) {
+  const tokenResponse = await request.server.googleOAuth2.getAccessTokenFromAuthorizationCodeFlow(request);
+
+  const userInfo = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
+    headers: { Authorization: `Bearer ${tokenResponse.token.access_token}`  }
+  }).then(res => res.json());
+
+  console.log(userInfo); // buradan email name ve picture alinacak
+
+  const { email, name } = userInfo;
+
+  let user = await prisma.user.findUnique({
+    where: { username: email }
+  })
+
+  if (!user){
+    user = await prisma.user.create({
+      data: {
+        username: email,
+        password: ''
+      }
+    })
+  }
+
+  const token = request.server.jwt.sign({
+    userId: user.id,
+    username: user.username
+  });
+
+
+  return reply.send({ token, username: user.username });
 }
